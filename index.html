@@ -5,6 +5,11 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <title>ЦОКОЛЬ Lounge | Онлайн-бронирование</title>
   
+  <!-- Защита от индексации роботами и сканерами -->
+  <meta name="robots" content="noindex, nofollow, noarchive, nosnippet, noimageindex">
+  <meta name="googlebot" content="noindex, nofollow, noarchive">
+  <meta name="yandex" content="none">
+
   <!-- Telegram Web App SDK -->
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
 
@@ -373,12 +378,19 @@
     .drink-check { font-size: 10px; color: var(--green); font-weight: 700; display: none; }
     .drink-card.active .drink-check { display: inline-block; }
 
-    /* Form Inputs (16px font-size to prevent iOS auto-zoom) */
+    /* Form Inputs */
     .form-group { margin-bottom: 10px; }
     .form-group:last-child { margin-bottom: 0; }
     .form-group label { font-size: 10px; color: var(--text-muted); display: block; margin-bottom: 3px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; }
     .form-group input { width: 100%; background: var(--bg); border: 1px solid var(--border); padding: 10px 12px; border-radius: 8px; color: #fff; font-size: 16px; outline: none; }
     .form-group input:focus { border-color: var(--border-light); }
+
+    /* ЮРИДИЧЕСКИЙ ДИСКЛЕЙМЕР (ФЗ-15) */
+    .legal-disclaimer {
+      font-size: 10px; color: #5a5f6e; line-height: 1.5;
+      text-align: center; margin: 24px 8px 12px; padding: 12px;
+      border: 1px dashed rgba(255,255,255,0.06); border-radius: 10px;
+    }
 
     /* Bottom Fixed CTA */
     .checkout-bar {
@@ -399,8 +411,37 @@
     }
     .checkout-btn:hover { transform: translateY(-1px); }
 
-    /* Modal Checkout */
-    .modal-backdrop { display: none; position: fixed; inset: 0; background: rgba(0, 0, 0, 0.85); backdrop-filter: blur(8px); align-items: center; justify-content: center; padding: 16px; z-index: 999; }
+    /* Modal 18+ Подтверждение возраста */
+    .age-modal-backdrop {
+      display: none; position: fixed; inset: 0; background: rgba(0, 0, 0, 0.96);
+      backdrop-filter: blur(14px); align-items: center; justify-content: center; padding: 16px; z-index: 2000;
+    }
+    .age-modal-box {
+      background: #14161c; border: 1px solid var(--border-light); border-radius: 16px;
+      padding: 24px 20px; max-width: 320px; width: 100%; text-align: center;
+    }
+    .age-badge-big {
+      display: inline-block; width: 48px; height: 48px; line-height: 44px;
+      border: 2px solid var(--accent); border-radius: 50%; color: var(--accent);
+      font-size: 17px; font-weight: 800; margin-bottom: 12px;
+    }
+    .age-modal-box h3 { font-size: 16px; font-weight: 800; margin-bottom: 6px; }
+    .age-modal-box p { font-size: 12px; color: var(--text-muted); line-height: 1.5; margin-bottom: 18px; }
+    .age-confirm-btn {
+      background: var(--accent); color: #fff; border: none; padding: 12px;
+      border-radius: 10px; font-size: 13px; font-weight: 700; width: 100%; cursor: pointer;
+    }
+
+    /* Modal Lightbox / Checkout */
+    .poster-modal-backdrop, .hall-photo-modal-backdrop, .modal-backdrop {
+      display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.92);
+      backdrop-filter: blur(10px); z-index: 1000; align-items: center; justify-content: center; padding: 16px;
+    }
+    .poster-modal-box, .hall-photo-modal-box { max-width: 380px; width: 100%; text-align: center; position: relative; }
+    .poster-modal-img, .hall-photo-modal-img { width: 100%; max-height: 65vh; object-fit: contain; border-radius: 14px; border: 1px solid var(--border-light); }
+    .poster-modal-btn { margin-top: 12px; background: var(--accent); color: #fff; border: none; padding: 12px; border-radius: 10px; font-size: 12px; font-weight: 700; width: 100%; cursor: pointer; }
+    .poster-modal-close { margin-top: 8px; background: var(--surface); color: var(--text-muted); border: 1px solid var(--border); padding: 9px; border-radius: 8px; font-size: 11px; width: 100%; cursor: pointer; }
+    
     .modal-box { background: #14161c; border: 1px solid var(--border-light); border-radius: 16px; padding: 20px; max-width: 360px; width: 100%; text-align: center; }
     .modal-box h3 { font-size: 16px; font-weight: 800; margin-bottom: 8px; }
     .modal-box p { font-size: 12px; color: var(--text-muted); line-height: 1.6; margin-bottom: 16px; text-align: left; background: var(--bg); padding: 12px; border-radius: 10px; border: 1px solid var(--border); }
@@ -408,6 +449,16 @@
   </style>
 </head>
 <body>
+
+  <!-- Модальное окно подтверждения возраста 18+ -->
+  <div class="age-modal-backdrop" id="ageModal">
+    <div class="age-modal-box">
+      <div class="age-badge-big">18+</div>
+      <h3>Вам есть 18 лет?</h3>
+      <p>Материалы и сервисы заведения предназначены исключительно для совершеннолетних гостей.</p>
+      <button class="age-confirm-btn" onclick="confirmAge()">Да, мне есть 18 лет</button>
+    </div>
+  </div>
 
   <div class="container">
     <!-- Header -->
@@ -563,7 +614,6 @@
         <!-- Table 2 -->
         <g id="node-t2" class="tbl-node" onclick="selectItem('t2', 'Стол №2 (Красный диван)', 'Центр зала • Красный диван + 2 стула', false)">
           <rect x="122" y="131" width="46" height="30" class="tbl-body" />
-          <text x="145" y="72" style="display:none"></text>
           <text x="145" y="147" class="svg-text-num">2</text>
           <rect x="176" y="133" width="4" height="11" class="tbl-chair" />
           <rect x="176" y="148" width="4" height="11" class="tbl-chair" />
@@ -742,6 +792,11 @@
         <input type="tel" id="guestPhoneInput" value="+7 (980) 123-45-67" placeholder="+7 (9XX) XXX-XX-XX">
       </div>
     </div>
+
+    <!-- ЮРИДИЧЕСКИЙ ДИСКЛЕЙМЕР (ФЗ-15) -->
+    <div class="legal-disclaimer">
+      Информация носит ознакомительный характер для гостей заведения ЦОКОЛЬ Lounge, не является публичной офертой, рекламой или дистанционной продажей табачной продукции. Курение вредит вашему здоровью. Вход строго 18+.
+    </div>
   </div>
 
   <!-- Bottom CTA -->
@@ -783,6 +838,20 @@
   </div>
 
   <script>
+    // ПРОВЕРКА 18+ (LOCALSTORAGE)
+    function checkAgeVerification() {
+      const isVerified = localStorage.getItem('cokol_age_confirmed');
+      if (!isVerified) {
+        document.getElementById('ageModal').style.display = 'flex';
+      }
+    }
+
+    function confirmAge() {
+      haptic('impact');
+      localStorage.setItem('cokol_age_confirmed', 'true');
+      document.getElementById('ageModal').style.display = 'none';
+    }
+
     // TELEGRAM MINI APP INITIALIZATION
     const tg = window.Telegram?.WebApp;
     if (tg) {
@@ -1370,7 +1439,8 @@
       document.getElementById('modal').style.display = 'none'; 
     }
 
-    // Старт
+    // Инициализация при загрузке
+    checkAgeVerification();
     buildCalendar();
     buildAfisha();
     renderCategory('energy');
